@@ -6,6 +6,10 @@ module {
     #Professional;
     #Creative;
     #Minimal;
+    #TwoColumn;
+    #Academic;
+    #Executive;
+    #StartupTech;
   };
 
   public type Template = {

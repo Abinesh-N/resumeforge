@@ -32,10 +32,14 @@ type Timestamp = int;
 type TemplateId = text;
 type TemplateCategory = 
  variant {
+   Academic;
    Creative;
+   Executive;
    Minimal;
    Modern;
    Professional;
+   StartupTech;
+   TwoColumn;
  };
 type Template = 
  record {

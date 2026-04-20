@@ -15,6 +15,7 @@ import {
   Code2,
   Download,
   FolderOpen,
+  MousePointerClick,
   RefreshCw,
   Save,
   User,
@@ -64,15 +65,105 @@ const SECTIONS: { id: SectionId; label: string; icon: React.ElementType }[] = [
 ];
 
 const TEMPLATE_LABELS: Record<string, string> = {
-  "modern-clean": "Modern",
-  "professional-exec": "Executive",
-  "creative-bold": "Creative",
-  "minimal-zen": "Minimal",
-  "two-column": "Two-Col",
-  academic: "Academic",
+  "modern-clean": "Modern Clean",
+  "modern-dark": "Modern Dark",
+  "modern-navy": "Modern Navy",
+  "modern-teal": "Modern Teal",
+  "modern-slate": "Modern Slate",
+  "modern-gradient": "Gradient",
+  "modern-bold": "Bold",
+  "modern-compact": "Compact",
+  "pro-classic": "Classic",
+  "pro-executive": "Executive",
+  "pro-corporate": "Corporate",
+  "pro-formal": "Formal",
+  "pro-elegant": "Elegant",
+  "pro-refined": "Refined",
+  "pro-polished": "Polished",
+  "pro-distinguished": "Distinguished",
+  "creative-color": "Color",
+  "creative-vibrant": "Vibrant",
+  "creative-bold": "Creative Bold",
+  "creative-designer": "Designer",
+  "creative-artistic": "Artistic",
+  "creative-dynamic": "Dynamic",
+  "minimal-pure": "Pure",
+  "minimal-clean": "Minimal Clean",
+  "minimal-zen": "Zen",
+  "minimal-swiss": "Swiss",
+  "minimal-nordic": "Nordic",
+  "minimal-simple": "Simple",
+  "twocol-modern": "Two-Col Modern",
+  "twocol-classic": "Two-Col Classic",
+  "twocol-skills": "Skills Chart",
+  "twocol-sidebar": "Sidebar Dark",
+  "twocol-accent": "Accent Split",
+  "academic-traditional": "Academic",
+  "academic-research": "Research",
+  "academic-cv": "Academic CV",
+  "exec-premium": "Premium",
+  "exec-leadership": "Leadership",
   "startup-modern": "Startup",
-  "elegant-dark": "Elegant",
+  "startup-tech": "Tech Dark",
 };
+
+// ─── Nested field path setter ─────────────────────────────────────────────────
+
+function setNestedField(
+  content: ResumeContent,
+  path: string,
+  value: string,
+): ResumeContent {
+  const parts = path.split(".");
+  const result = structuredClone(content) as unknown as Record<string, unknown>;
+
+  if (parts[0] === "personalInfo" && parts.length === 2) {
+    const info = result.personalInfo as Record<string, string>;
+    info[parts[1]] = value;
+    return result as unknown as ResumeContent;
+  }
+
+  if (
+    (parts[0] === "experience" ||
+      parts[0] === "education" ||
+      parts[0] === "projects") &&
+    parts.length === 3
+  ) {
+    const arr = result[parts[0]] as Array<Record<string, string>>;
+    const idx = Number.parseInt(parts[1], 10);
+    if (!Number.isNaN(idx) && arr[idx]) {
+      arr[idx][parts[2]] = value;
+    }
+    return result as unknown as ResumeContent;
+  }
+
+  if (parts[0] === "skills" && parts.length === 2) {
+    const arr = result.skills as string[];
+    const idx = Number.parseInt(parts[1], 10);
+    if (!Number.isNaN(idx) && idx >= 0 && idx < arr.length) {
+      arr[idx] = value;
+    }
+    return result as unknown as ResumeContent;
+  }
+
+  return content;
+}
+
+// ─── Click-to-Edit overlay style ─────────────────────────────────────────────
+
+const CLICK_EDIT_STYLE = `
+  [data-editable] {
+    cursor: text !important;
+    border-radius: 2px;
+    transition: outline 0.1s, background 0.1s;
+    position: relative;
+  }
+  [data-editable]:hover {
+    outline: 2px solid #3B82F6;
+    outline-offset: 2px;
+    background: rgba(59,130,246,0.06);
+  }
+`;
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -173,7 +264,7 @@ function TemplateThumbnail({
         dangerouslySetInnerHTML={{ __html: html }}
       />
       <div
-        className={`absolute bottom-0 inset-x-0 py-0.5 text-[9px] font-medium text-center ${
+        className={`absolute bottom-0 inset-x-0 py-0.5 text-[9px] font-medium text-center truncate px-1 ${
           active
             ? "bg-primary text-primary-foreground"
             : "bg-muted/80 text-muted-foreground"
@@ -224,6 +315,16 @@ function SaveStatus({
   );
 }
 
+// ─── Click-to-Edit floating input overlay ─────────────────────────────────────
+
+interface FloatingInput {
+  fieldPath: string;
+  value: string;
+  rect: DOMRect;
+  isTextarea: boolean;
+  fontSize: string;
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function ResumeFormEditor() {
@@ -236,10 +337,19 @@ export default function ResumeFormEditor() {
   const [activeSection, setActiveSection] = useState<SectionId>("personal");
   const [skillInput, setSkillInput] = useState("");
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const [clickEditMode, setClickEditMode] = useState(false);
+  const [floatingInput, setFloatingInput] = useState<FloatingInput | null>(
+    null,
+  );
 
   const sectionRefs = useRef<Partial<Record<SectionId, HTMLElement | null>>>(
     {},
   );
+  const previewContainerRef = useRef<HTMLDivElement | null>(null);
+  const previewContentRef = useRef<HTMLDivElement | null>(null);
+  const floatingInputRef = useRef<
+    HTMLInputElement | HTMLTextAreaElement | null
+  >(null);
 
   const handleSave = useCallback(
     async (data: {
@@ -259,6 +369,100 @@ export default function ResumeFormEditor() {
     initialTemplateId: resume?.templateId ?? "modern-clean",
     onSave: handleSave,
   });
+
+  // ── Click-to-Edit: attach listeners after preview renders ─────────────────
+
+  useEffect(() => {
+    const container = previewContentRef.current;
+    if (!container || !clickEditMode) return;
+
+    const handleClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const editable = target.closest("[data-editable]") as HTMLElement | null;
+      if (!editable) return;
+      e.preventDefault();
+      e.stopPropagation();
+
+      const fieldPath = editable.getAttribute("data-editable") ?? "";
+      const currentText = editable.textContent ?? "";
+
+      // Determine if this is a multiline field (description / summary)
+      const isMulti =
+        fieldPath.includes("description") || fieldPath.includes("summary");
+
+      const containerRect =
+        previewContainerRef.current?.getBoundingClientRect() ?? {
+          top: 0,
+          left: 0,
+        };
+      const elemRect = editable.getBoundingClientRect();
+      const computed = window.getComputedStyle(editable);
+      const fontSize = computed.fontSize || "14px";
+
+      // Position relative to the scrollable preview container
+      const scrollTop = previewContainerRef.current?.scrollTop ?? 0;
+      const relativeRect: DOMRect = {
+        top: elemRect.top - containerRect.top + scrollTop,
+        left: elemRect.left - containerRect.left,
+        width: Math.max(elemRect.width, isMulti ? 280 : 180),
+        height: elemRect.height,
+        right: elemRect.right - containerRect.left,
+        bottom: elemRect.bottom - containerRect.top + scrollTop,
+        x: elemRect.x - containerRect.left,
+        y: elemRect.y - containerRect.top + scrollTop,
+        toJSON: () => ({}),
+      } as DOMRect;
+
+      setFloatingInput({
+        fieldPath,
+        value: currentText,
+        rect: relativeRect,
+        isTextarea: isMulti,
+        fontSize,
+      });
+    };
+
+    container.addEventListener("click", handleClick);
+    return () => container.removeEventListener("click", handleClick);
+    // Re-attach when edit mode or rendered content changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clickEditMode]);
+
+  // Focus floating input when it appears
+  useEffect(() => {
+    if (floatingInput && floatingInputRef.current) {
+      floatingInputRef.current.focus();
+      if (floatingInputRef.current instanceof HTMLInputElement) {
+        floatingInputRef.current.select();
+      } else {
+        const ta = floatingInputRef.current as HTMLTextAreaElement;
+        ta.setSelectionRange(ta.value.length, ta.value.length);
+      }
+    }
+  }, [floatingInput]);
+
+  const commitFloatingEdit = () => {
+    if (!floatingInput) return;
+    const newContent = setNestedField(
+      editor.content,
+      floatingInput.fieldPath,
+      floatingInput.value,
+    );
+    editor.setContent(newContent);
+    setFloatingInput(null);
+  };
+
+  const handleFloatingKeyDown = (
+    e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
+    if (!floatingInput?.isTextarea && e.key === "Enter") {
+      e.preventDefault();
+      commitFloatingEdit();
+    }
+    if (e.key === "Escape") {
+      setFloatingInput(null);
+    }
+  };
 
   // Scroll form panel to section on nav click
   const scrollToSection = (id: SectionId) => {
@@ -476,6 +680,8 @@ export default function ResumeFormEditor() {
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
+  const renderedHtml = renderTemplate(editor.templateId, editor.content);
+
   return (
     <div
       className="min-h-screen bg-background flex flex-col"
@@ -522,7 +728,7 @@ export default function ResumeFormEditor() {
               data-ocid="editor.advanced_editor_button"
             >
               <Wand2 className="w-3.5 h-3.5" />
-              Advanced Editor
+              Advanced
             </Button>
             <Button
               variant="outline"
@@ -909,35 +1115,138 @@ export default function ResumeFormEditor() {
         >
           {/* Preview header */}
           <div className="bg-card border-b border-border px-4 py-2.5 flex items-center justify-between shrink-0">
-            <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-              Live Preview
-            </span>
-            <Badge
-              variant="outline"
-              className="text-[10px] font-medium"
-              data-ocid="editor.preview_badge"
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                Live Preview
+              </span>
+              <Badge
+                variant="outline"
+                className="text-[10px] font-medium"
+                data-ocid="editor.preview_badge"
+              >
+                {TEMPLATE_LABELS[editor.templateId] ?? editor.templateId}
+              </Badge>
+            </div>
+
+            {/* Click & Edit toggle */}
+            <button
+              type="button"
+              onClick={() => {
+                setClickEditMode((v) => !v);
+                setFloatingInput(null);
+              }}
+              data-ocid="editor.click_edit_toggle"
+              className={[
+                "flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border transition-all duration-200",
+                clickEditMode
+                  ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                  : "bg-card text-muted-foreground border-border hover:border-primary/50 hover:text-foreground",
+              ].join(" ")}
+              title={
+                clickEditMode
+                  ? "Exit click-to-edit mode"
+                  : "Enable click-to-edit mode"
+              }
             >
-              {TEMPLATE_LABELS[editor.templateId] ?? editor.templateId}
-            </Badge>
+              <MousePointerClick className="w-3.5 h-3.5" />
+              {clickEditMode ? "Editing Mode ON" : "Click & Edit"}
+            </button>
           </div>
+
+          {/* Click-to-edit hint banner */}
+          {clickEditMode && (
+            <div className="bg-primary/8 border-b border-primary/20 px-4 py-2 flex items-center gap-2 text-xs text-primary shrink-0">
+              <MousePointerClick className="w-3.5 h-3.5 shrink-0" />
+              <span className="font-medium">
+                Click any text on the resume to edit it directly
+              </span>
+              <span className="text-primary/60 ml-1">
+                · Press Esc or click outside to cancel · Enter to save
+              </span>
+            </div>
+          )}
 
           {/* Preview iframe area */}
           <div
-            className="flex-1 overflow-auto p-6"
+            ref={previewContainerRef}
+            className="flex-1 overflow-auto p-6 relative"
             data-ocid="editor.preview_panel"
           >
+            {/* Click-to-edit style injection */}
+            {clickEditMode && (
+              <style
+                // biome-ignore lint/security/noDangerouslySetInnerHtml: injecting edit mode CSS into preview
+                dangerouslySetInnerHTML={{ __html: CLICK_EDIT_STYLE }}
+              />
+            )}
+
             <div
-              className="mx-auto rounded-lg border border-border/50 shadow-lg overflow-hidden bg-white"
+              className="mx-auto rounded-lg border border-border/50 shadow-lg overflow-hidden bg-white relative"
               style={{ width: 794 }}
             >
+              {/* Rendered template HTML */}
               <div
+                ref={previewContentRef}
                 style={{ minHeight: 1123 }}
                 // biome-ignore lint/security/noDangerouslySetInnerHtml: template HTML for resume preview
-                dangerouslySetInnerHTML={{
-                  __html: renderTemplate(editor.templateId, editor.content),
-                }}
+                dangerouslySetInnerHTML={{ __html: renderedHtml }}
               />
             </div>
+
+            {/* Floating edit input — positioned over clicked element */}
+            {floatingInput && (
+              <div
+                className="absolute z-50"
+                style={{
+                  top: floatingInput.rect.top + 32,
+                  left: floatingInput.rect.left + 24,
+                  minWidth: floatingInput.rect.width,
+                }}
+              >
+                {floatingInput.isTextarea ? (
+                  <textarea
+                    ref={(el) => {
+                      floatingInputRef.current = el;
+                    }}
+                    value={floatingInput.value}
+                    onChange={(e) =>
+                      setFloatingInput((fi) =>
+                        fi ? { ...fi, value: e.target.value } : fi,
+                      )
+                    }
+                    onBlur={commitFloatingEdit}
+                    onKeyDown={handleFloatingKeyDown}
+                    rows={4}
+                    className="w-full min-w-[280px] px-2 py-1.5 text-sm bg-white border-2 border-primary rounded-md shadow-xl focus:outline-none resize-none"
+                    style={{ fontSize: floatingInput.fontSize }}
+                    data-ocid="editor.inline_edit_textarea"
+                  />
+                ) : (
+                  <input
+                    ref={(el) => {
+                      floatingInputRef.current = el;
+                    }}
+                    type="text"
+                    value={floatingInput.value}
+                    onChange={(e) =>
+                      setFloatingInput((fi) =>
+                        fi ? { ...fi, value: e.target.value } : fi,
+                      )
+                    }
+                    onBlur={commitFloatingEdit}
+                    onKeyDown={handleFloatingKeyDown}
+                    className="w-full min-w-[200px] px-2 py-1 text-sm bg-white border-2 border-primary rounded-md shadow-xl focus:outline-none"
+                    style={{ fontSize: floatingInput.fontSize }}
+                    data-ocid="editor.inline_edit_input"
+                  />
+                )}
+                <div className="mt-1 text-[10px] text-primary/70 bg-primary/10 rounded px-2 py-0.5 inline-block">
+                  {floatingInput.isTextarea
+                    ? "Ctrl+Enter · Esc"
+                    : "Enter · Esc"}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Template thumbnail strip */}

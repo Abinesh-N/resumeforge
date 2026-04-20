@@ -142,7 +142,11 @@ export enum PaymentStatus {
 export enum TemplateCategory {
     Creative = "Creative",
     Minimal = "Minimal",
+    Academic = "Academic",
+    Executive = "Executive",
     Professional = "Professional",
+    StartupTech = "StartupTech",
+    TwoColumn = "TwoColumn",
     Modern = "Modern"
 }
 export interface backendInterface {

@@ -1,25 +1,24 @@
 {
-  "overview": "A production-level Resume Builder SaaS with dual creation modes — a structured form builder and a full TipTap advanced editor. Includes 8 professional templates, Stripe-powered PDF downloads, and a personal dashboard to manage all your resumes.",
+  "overview": "ResumeForge is a professional resume builder on the Internet Computer featuring 40 distinct resume templates, click-to-edit inline editing, Stripe-powered PDF downloads, and Internet Identity authentication.",
   "features": [
-    "Form-based resume builder with live preview",
-    "TipTap advanced editor with rich text formatting",
-    "8 professional templates (Modern, Professional, Creative, Minimal)",
-    "Template switching with content preservation",
-    "Stripe payment for PDF download",
-    "Instant PDF download after payment (jsPDF + html2canvas)",
-    "Dashboard with resume management and download history",
-    "Internet Identity authentication"
+    "40 professionally distinct resume templates with unique layouts and styles",
+    "Click-to-edit inline editing directly on resume preview",
+    "ATS-friendly templates readable by automated systems",
+    "Form-based and advanced editor modes",
+    "Stripe-powered paid PDF download",
+    "Internet Identity authentication",
+    "Resume dashboard with history",
+    "Template switching with content preservation"
   ],
   "category": "productivity",
   "tags": [
     "resume",
     "builder",
-    "editor",
-    "saas",
-    "pdf",
     "templates",
-    "tiptap",
-    "stripe"
+    "career",
+    "pdf",
+    "editor",
+    "professional"
   ],
-  "last_updated": "2026-04-20T09:50:49.337Z"
+  "last_updated": "2026-04-20T10:54:53.349Z"
 }

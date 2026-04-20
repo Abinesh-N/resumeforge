@@ -80,6 +80,30 @@ const CATEGORY_CONFIG: Record<
     bgClass: "bg-amber-500/10 border-amber-500/25",
     dotClass: "bg-amber-400",
   },
+  [TemplateCategory.Academic]: {
+    label: "Academic",
+    textClass: "text-cyan-400",
+    bgClass: "bg-cyan-500/10 border-cyan-500/25",
+    dotClass: "bg-cyan-400",
+  },
+  [TemplateCategory.Executive]: {
+    label: "Executive",
+    textClass: "text-rose-400",
+    bgClass: "bg-rose-500/10 border-rose-500/25",
+    dotClass: "bg-rose-400",
+  },
+  [TemplateCategory.StartupTech]: {
+    label: "Startup Tech",
+    textClass: "text-orange-400",
+    bgClass: "bg-orange-500/10 border-orange-500/25",
+    dotClass: "bg-orange-400",
+  },
+  [TemplateCategory.TwoColumn]: {
+    label: "Two Column",
+    textClass: "text-indigo-400",
+    bgClass: "bg-indigo-500/10 border-indigo-500/25",
+    dotClass: "bg-indigo-400",
+  },
 };
 
 function getCategoryFromTemplateId(templateId: string): TemplateCategory {

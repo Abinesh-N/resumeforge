@@ -104,7 +104,11 @@ export const StripeSessionStatus = IDL.Variant({
 export const TemplateCategory = IDL.Variant({
   'Creative' : IDL.Null,
   'Minimal' : IDL.Null,
+  'Academic' : IDL.Null,
+  'Executive' : IDL.Null,
   'Professional' : IDL.Null,
+  'StartupTech' : IDL.Null,
+  'TwoColumn' : IDL.Null,
   'Modern' : IDL.Null,
 });
 export const Template = IDL.Record({
@@ -277,7 +281,11 @@ export const idlFactory = ({ IDL }) => {
   const TemplateCategory = IDL.Variant({
     'Creative' : IDL.Null,
     'Minimal' : IDL.Null,
+    'Academic' : IDL.Null,
+    'Executive' : IDL.Null,
     'Professional' : IDL.Null,
+    'StartupTech' : IDL.Null,
+    'TwoColumn' : IDL.Null,
     'Modern' : IDL.Null,
   });
   const Template = IDL.Record({

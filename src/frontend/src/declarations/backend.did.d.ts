@@ -107,7 +107,11 @@ export interface Template {
 }
 export type TemplateCategory = { 'Creative' : null } |
   { 'Minimal' : null } |
+  { 'Academic' : null } |
+  { 'Executive' : null } |
   { 'Professional' : null } |
+  { 'StartupTech' : null } |
+  { 'TwoColumn' : null } |
   { 'Modern' : null };
 export type TemplateId = string;
 export type Timestamp = bigint;

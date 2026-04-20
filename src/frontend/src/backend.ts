@@ -224,7 +224,11 @@ export enum PaymentStatus {
 export enum TemplateCategory {
     Creative = "Creative",
     Minimal = "Minimal",
+    Academic = "Academic",
+    Executive = "Executive",
     Professional = "Professional",
+    StartupTech = "StartupTech",
+    TwoColumn = "TwoColumn",
     Modern = "Modern"
 }
 export interface backendInterface {
@@ -633,11 +637,19 @@ function from_candid_variant_n19(_uploadFile: (file: ExternalBlob) => Promise<Ui
 } | {
     Minimal: null;
 } | {
+    Academic: null;
+} | {
+    Executive: null;
+} | {
     Professional: null;
+} | {
+    StartupTech: null;
+} | {
+    TwoColumn: null;
 } | {
     Modern: null;
 }): TemplateCategory {
-    return "Creative" in value ? TemplateCategory.Creative : "Minimal" in value ? TemplateCategory.Minimal : "Professional" in value ? TemplateCategory.Professional : "Modern" in value ? TemplateCategory.Modern : value;
+    return "Creative" in value ? TemplateCategory.Creative : "Minimal" in value ? TemplateCategory.Minimal : "Academic" in value ? TemplateCategory.Academic : "Executive" in value ? TemplateCategory.Executive : "Professional" in value ? TemplateCategory.Professional : "StartupTech" in value ? TemplateCategory.StartupTech : "TwoColumn" in value ? TemplateCategory.TwoColumn : "Modern" in value ? TemplateCategory.Modern : value;
 }
 function from_candid_variant_n4(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     pending: null;
