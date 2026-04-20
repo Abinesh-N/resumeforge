@@ -1,0 +1,174 @@
+type http_request_result = 
+ record {
+   body: blob;
+   headers: vec http_header;
+   status: nat;
+ };
+type http_header = 
+ record {
+   name: text;
+   value: text;
+ };
+type UserId = text;
+type UpdateResumeInput = 
+ record {
+   content: ResumeContent;
+   id: ResumeId;
+   templateId: TemplateId;
+   title: text;
+ };
+type TransformationOutput = 
+ record {
+   body: blob;
+   headers: vec http_header;
+   status: nat;
+ };
+type TransformationInput = 
+ record {
+   context: blob;
+   response: http_request_result;
+ };
+type Timestamp = int;
+type TemplateId = text;
+type TemplateCategory = 
+ variant {
+   Creative;
+   Minimal;
+   Modern;
+   Professional;
+ };
+type Template = 
+ record {
+   category: TemplateCategory;
+   description: text;
+   id: TemplateId;
+   name: text;
+ };
+type StripeSessionStatus = 
+ variant {
+   completed: record {
+                response: text;
+                userPrincipal: opt text;
+              };
+   failed: record {error: text;};
+ };
+type StripeConfiguration = 
+ record {
+   allowedCountries: vec text;
+   secretKey: text;
+ };
+type ShoppingItem = 
+ record {
+   currency: text;
+   priceInCents: nat;
+   productDescription: text;
+   productName: text;
+   quantity: nat;
+ };
+type ResumeView = 
+ record {
+   content: ResumeContent;
+   createdAt: Timestamp;
+   downloadUnlocked: bool;
+   id: ResumeId;
+   ownerId: UserId;
+   templateId: TemplateId;
+   title: text;
+   updatedAt: Timestamp;
+ };
+type ResumeId = text;
+type ResumeContent = 
+ record {
+   education: vec EducationEntry;
+   experience: vec ExperienceEntry;
+   personalInfo: PersonalInfo;
+   projects: vec ProjectEntry;
+   skills: vec text;
+ };
+type ProjectEntry = 
+ record {
+   description: text;
+   link: text;
+   title: text;
+ };
+type ProfileView = 
+ record {
+   createdAt: Timestamp;
+   email: opt text;
+   name: opt text;
+   principalId: UserId;
+ };
+type PersonalInfo = 
+ record {
+   email: text;
+   location: text;
+   name: text;
+   phone: text;
+   summary: text;
+ };
+type PaymentStatus = 
+ variant {
+   failed;
+   pending;
+   success;
+ };
+type PaymentRecordView = 
+ record {
+   amount: nat;
+   createdAt: Timestamp;
+   id: PaymentId;
+   resumeId: ResumeId;
+   status: PaymentStatus;
+   stripePaymentIntentId: text;
+   unlockedAt: opt Timestamp;
+   userId: UserId;
+ };
+type PaymentId = text;
+type ExperienceEntry = 
+ record {
+   company: text;
+   description: text;
+   endDate: text;
+   startDate: text;
+   title: text;
+ };
+type EducationEntry = 
+ record {
+   degree: text;
+   description: text;
+   endDate: text;
+   school: text;
+   startDate: text;
+ };
+type CreateResumeInput = 
+ record {
+   content: ResumeContent;
+   templateId: TemplateId;
+   title: text;
+ };
+type CreatePaymentInput = 
+ record {
+   amount: nat;
+   resumeId: ResumeId;
+   stripePaymentIntentId: text;
+ };
+service : {
+  confirmPayment: (paymentId: PaymentId) -> (PaymentRecordView);
+  createCheckoutSession: (items: vec ShoppingItem, successUrl: text,
+   cancelUrl: text) -> (text);
+  createPaymentRecord: (input: CreatePaymentInput) -> (PaymentRecordView);
+  createResume: (input: CreateResumeInput) -> (ResumeView);
+  deleteResume: (resumeId: ResumeId) -> (bool);
+  getMyProfile: () -> (opt ProfileView);
+  getMyResumes: () -> (vec ResumeView) query;
+  getPaymentHistory: () -> (vec PaymentRecordView) query;
+  getResume: (resumeId: ResumeId) -> (opt ResumeView) query;
+  getStripeSessionStatus: (sessionId: text) -> (StripeSessionStatus);
+  getTemplate: (templateId: TemplateId) -> (opt Template) query;
+  getTemplates: () -> (vec Template) query;
+  isStripeConfigured: () -> (bool) query;
+  setStripeConfiguration: (config: StripeConfiguration) -> ();
+  transform: (input: TransformationInput) -> (TransformationOutput) query;
+  updateMyProfile: (email: opt text, name: opt text) -> (ProfileView);
+  updateResume: (input: UpdateResumeInput) -> (ResumeView);
+}

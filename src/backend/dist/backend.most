@@ -1,0 +1,96 @@
+// Version: 1.0.0
+type Data__791452850<K, V> =
+  {var count : Nat__490723111; kvs : [var ?(K, V)]};
+type EducationEntry__485370370 =
+  {
+    degree : Text;
+    description : Text;
+    endDate : Text;
+    school : Text;
+    startDate : Text
+  };
+type ExperienceEntry__710590077 =
+  {
+    company : Text;
+    description : Text;
+    endDate : Text;
+    startDate : Text;
+    title : Text
+  };
+type Internal__8484328<K, V> =
+  {children : [var ?Node__46230540<K, V>]; data : Data__791452850<K, V>};
+type Leaf__809889148<K, V> = {data : Data__791452850<K, V>};
+type Nat__490723111 = Nat__920180692;
+type Nat__920180692 = Nat;
+type Node__46230540<K, V> =
+  {#internal : Internal__8484328<K, V>; #leaf : Leaf__809889148<K, V>};
+type PaymentId__1028686908 = Text;
+type PaymentRecord__536214743 =
+  {
+    amount : Nat;
+    createdAt : Timestamp__301639476;
+    id : PaymentId__1028686908;
+    resumeId : ResumeId__450474765;
+    var status : PaymentStatus__299084309;
+    stripePaymentIntentId : Text;
+    var unlockedAt : ?Timestamp__301639476;
+    userId : UserId__158757552
+  };
+type PaymentStatus__299084309 = {#failed; #pending; #success};
+type PersonalInfo__957167532 =
+  {email : Text; location : Text; name : Text; phone : Text; summary : Text};
+type Profile__901378260 =
+  {
+    createdAt : Timestamp__301639476;
+    var email : ?Text;
+    var name : ?Text;
+    principalId : UserId__158757552
+  };
+type ProjectEntry__879303705 =
+  {description : Text; link : Text; title : Text};
+type ResumeContent__674833876 =
+  {
+    education : [EducationEntry__485370370];
+    experience : [ExperienceEntry__710590077];
+    personalInfo : PersonalInfo__957167532;
+    projects : [ProjectEntry__879303705];
+    skills : [Text]
+  };
+type ResumeId__450474765 = Text;
+type Resume__444704314 =
+  {
+    var content : ResumeContent__674833876;
+    createdAt : Timestamp__301639476;
+    var downloadUnlocked : Bool;
+    id : ResumeId__450474765;
+    ownerId : UserId__158757552;
+    templateId : TemplateId__141868339;
+    var title : Text;
+    var updatedAt : Timestamp__301639476
+  };
+type StripeConfiguration__96897619 =
+  {allowedCountries : [Text]; secretKey : Text};
+type TemplateId__141868339 = Text;
+type Timestamp__301639476 = Int;
+type UserId__158757552 = Text;
+actor {
+  stable var paymentCounter : {var value : Nat};
+  stable payments :
+    {
+      var root :
+        Node__46230540<PaymentId__1028686908, PaymentRecord__536214743>;
+      var size : Nat__490723111
+    };
+  stable profiles :
+    {
+      var root : Node__46230540<UserId__158757552, Profile__901378260>;
+      var size : Nat__490723111
+    };
+  stable var resumeCounter : {var value : Nat};
+  stable resumes :
+    {
+      var root : Node__46230540<ResumeId__450474765, Resume__444704314>;
+      var size : Nat__490723111
+    };
+  stable var stripeConfiguration : ?StripeConfiguration__96897619
+};
